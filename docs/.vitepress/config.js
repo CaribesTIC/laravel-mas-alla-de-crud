@@ -1,5 +1,5 @@
 module.exports = {
-  title: 'laravelVue(apiSpa)',
+  title: 'LARAVEL - más allá de crud',
   description: 'Just playing around.',
   base: '/', //  The default path during deployment / secondary address / base can be used/
   themeConfig: {
@@ -22,7 +22,7 @@ module.exports = {
         collapsable: false, // optional, defaults to true        
         children: [
           { text: 'Laravel orientado al dominio', link: '/laravel-mas-alla-de-crud/laravel-orientado-al-dominio' },
-          { text: 'Four', link: '/laravel-mas-alla-de-crud/four' }
+          { text: 'Trabajar con datos', link: '/laravel-mas-alla-de-crud/trabajar-con-datos' }
         ]
       }
     ]

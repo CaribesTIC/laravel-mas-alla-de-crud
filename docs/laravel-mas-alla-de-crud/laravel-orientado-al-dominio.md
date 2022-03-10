@@ -45,8 +45,8 @@ La capa de aplicación será una o varias aplicaciones. Cada aplicación se pued
 
 Un ejemplo podría ser un panel de administración HTTP estándar y otro podría ser una API REST. También me gusta pensar en la consola, el artesano de Laravel, como una aplicación propia.
 
-`Una carpeta de dominio específica por concepto de negocio`
 ```
+One specific domain folder per business concept
 src/Domain/Invoices/
 ├── Actions
 ├── QueryBuilders
@@ -61,3 +61,71 @@ src/Domain/Invoices/
 src/Domain/Customers/
 // ...
 ```
+Y así es como se vería la capa de aplicación:
+
+```
+The admin HTTP application
+src/App/Admin/
+├── Controllers
+├── Middlewares
+├── Requests
+├── Resources
+└── ViewModels
+The REST API application
+src/App/Api/
+├── Controllers
+├── Middlewares
+├── Requests
+└── Resources
+The console application
+src/App/Console/
+└── Commands
+```
+Es posible que haya notado que el ejemplo anterior no sigue la convención de Laravel de `\App` como el espacio de nombres raíz único. Dado que las aplicaciones son solo una parte de nuestro proyecto, y debido a que puede haber varias, no tiene sentido usar `\App` como raíz para todo.
+
+Si prefiere permanecer más cerca de la estructura predeterminada de Laravel, puede hacerlo. Recuerde, este libro no se trata de proporcionarle un conjunto fijo de reglas, se trata de enseñar una mentalidad. Eres libre de elegir cualquier patrón y solución que apliques a tus problemas, y cuáles no.
+
+Si aún desea separar los espacios de nombres raíz, puede hacerlo haciendo un ligero cambio en `composer.json`:
+
+```
+{
+    // ...
+    "autoload" : {
+        "psr-4" : {
+            "App\\" : "src/App/",
+            "Domain\\" : "src/Domain/",
+            "Support\\" : "src/Support/"
+        }
+    }
+}
+```
+Tenga en cuenta que también tengo un espacio de nombres raíz de soporte, puede pensar en eso como el vertedero para todos los pequeños ayudantes que no pertenecen a ningún lado. Verá algunos usos prácticos del espacio de nombres de soporte en capítulos futuros.
+
+Desafortunadamente, hay una cosa más que debe hacer para que Laravel admita completamente sus espacios de nombres personalizados. De forma predeterminada, Laravel buscará en la carpeta `app/` que contiene todo el código de la aplicación, y este valor predeterminado está hardcodeado en la clase `\Illuminate\Foundation\Application`.
+
+Afortunadamente, podemos hacer fácilmente nuestra propia versión, así:
+
+```
+namespace App;
+
+class Application extends \Illuminate\Foundation\Application
+{
+    protected $namespace = 'App\\';
+}
+```
+Y sobreescríbalo en `bootstrap/app.php`, así:
+
+```
+use App\Application;
+
+$app = (new Application(
+    $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
+))->useAppPath('src/App');
+```
+Una vez más, no es necesario que hagas esto si quieres seguir con la estructura predeterminada de Laravel.
+
+Sea cual sea la estructura de carpetas que utilice, es muy importante que empiece a pensar en grupos de conceptos empresariales relacionados, en lugar de en grupos de código con las mismas propiedades técnicas.
+
+Dentro de cada grupo, cada dominio, hay espacio para estructurar el código de cualquier manera que tenga sentido dentro de ese grupo específico. La primera parte de este libro analizará de cerca cómo se pueden estructurar internamente los dominios y qué patrones se pueden usar para ayudarlo a mantener su base de código mantenible a medida que crece con el tiempo. Después de eso, veremos la capa de aplicación: cómo puede consumir el dominio y cómo mejoramos los conceptos existentes de Laravel mediante el uso, por ejemplo, de modelos de vista.
+
+Hay mucho terreno que cubrir, ¡así que vamos a sumergirnos!

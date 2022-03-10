@@ -1,2 +1,2 @@
-# laravel-mas-alla-de-crud
-laravel-mas-alla-de-crud
+# vitepress-laravel-vue
+Vitepress Laravel Vue
