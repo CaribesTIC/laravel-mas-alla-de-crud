@@ -156,5 +156,79 @@ Sin embargo, la pregunta sobre la construcción de DTO a partir de datos "extern
 
 ## Fábricas DTO
 
-DTO factories
+Compartiré dos formas posibles de construir DTO y también explicaré cuál es mi preferencia personal.
 
+La primera es la más correcta: usar una fábrica dedicada.
+
+```
+class CustomerDataFactory
+{
+    public function fromRequest(
+        CustomerRequest $request
+    ): CustomerData
+    {
+        return new CustomerData([
+            'name' => $request->get('name'),
+            'email' => $request->get('email'),
+            'birth_date' => Carbon::make(
+                $request->get('birth_date')
+            ),
+        ]);
+    }
+}
+```
+Tener una fábrica separada mantiene tu código limpio durante todo el proyecto. Diría que tiene más sentido que esta fábrica viva en la capa de la aplicación, ya que tiene que conocer solicitudes específicas y otros tipos de entradas de los usuarios.
+
+Si bien es la solución correcta, ¿se dio cuenta de que usé una abreviatura en un ejemplo anterior? Así es; en la propia clase DTO:
+`CustomerData::fromRequest()`.
+
+¿Qué tiene de malo este enfoque? Bueno, por un lado, agrega lógica específica de la aplicación en el dominio. La clase DTO, que vive en el dominio, ahora debe conocer la clase `CustomerRequest`, que vive en la capa de aplicación.
+
+```
+use Spatie\DataTransferObject\DataTransferObject;
+
+class CustomerData extends DataTransferObject
+{
+    // ...
+
+    public static function fromRequest(
+        CustomerRequest $request
+    ): self {
+        return new self([
+            'name' => $request->get('name'),
+            'email' => $request->get('email'),
+            'birth_date' => Carbon::make(
+                $request->get('birth_date')
+            ),
+        ]);
+    }
+}
+```
+Obviamente, mezclar código específico de la aplicación dentro del dominio no es la mejor de las ideas. Sin embargo, es mi preferencia. Hay dos razones para eso.
+
+En primer lugar, ya establecimos que los DTO son el punto de entrada de datos al código base. Tan pronto como estemos trabajando con datos del exterior, queremos convertirlos en un DTO. Necesitamos hacer este mapeo en algún lugar, por lo que también podríamos hacerlo dentro de la clase para la que está destinado.
+
+En segundo lugar, y esta es la razón más importante; Prefiero este enfoque debido a una de las propias limitaciones de PHP: todavía no admite parámetros con nombre.
+
+Vea, no desea que sus DTO terminen teniendo un constructor con un parámetro individual para cada propiedad: esto no se escala y es muy confuso cuando se trabaja con propiedades anulables o de valor predeterminado. Es por eso que prefiero el enfoque de pasar una matriz al DTO y hacer que se construya en función de los datos de esa matriz. Aparte: usamos nuestro paquete `spatie/data-transfer-object` para hacer exactamente esto.
+
+Debido a que los parámetros con nombre no son compatibles, tampoco hay un análisis estático disponible, lo que significa que no sabe qué datos se necesitan cada vez que construye un DTO. Prefiero mantener este "estar en la oscuridad" dentro de la clase DTO, para que pueda usarse sin un pensamiento adicional desde el exterior.
+
+Sin embargo, si PHP fuera compatible con algo como parámetros con nombre, lo cual será en PHP 8, diría que el patrón de fábrica es el camino a seguir:
+
+```
+public function fromRequest(
+    CustomerRequest $request
+): CustomerData {
+    return new CustomerData(
+        name: $request->get('name'),
+        email: $request->get('email'),
+        birth_date: Carbon::make(
+            $request->get('birth_date')
+        ),
+    );
+}
+```
+Hasta que PHP admita esto, elegiría la solución pragmática sobre la teóricamente correcta. Sin embargo, depende de ti. Siéntase libre de elegir lo que mejor se adapte a su equipo.
+
+## An alternative to typed properties
