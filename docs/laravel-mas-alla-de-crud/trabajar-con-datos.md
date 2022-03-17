@@ -18,7 +18,7 @@ La fuerza de un sistema de tipos (tipos fuertes o débiles) define si una variab
 
 PHP es un lenguaje débilmente tipificado. Veamos lo que eso significa en la práctica.
 
-```
+```php
 $id = '1'; // E.g. an id retrieved from the URL
 
 function find(int $id): Model
@@ -32,7 +32,7 @@ Para ser claros: tiene sentido que PHP tenga un sistema de tipo débil. Al ser u
 
 Podría pensar que en PHP moderno, puede evitar este tipo de cambio detrás de escena (malabarismo de tipos) utilizando la función de tipos estrictos, pero eso no es completamente cierto. La declaración de tipos estrictos evita que se pasen otros tipos a una función, pero aún puede cambiar el valor de la variable en la función misma.
 
-```
+```php
 declare(strict_types=1);
 
 function find(int $id): Model
@@ -87,7 +87,7 @@ Con toda esta información de fondo en mente, es hora de volver al núcleo de nu
 
 Visualicemos de lo que estoy hablando: trabajar con las solicitudes de Laravel. Piense en este ejemplo como una operación CRUD básica para actualizar un cliente existente.
 
-```
+```php
 function store(CustomerRequest $request, Customer $customer)
 {
     $validated = $request->validated();
@@ -109,7 +109,7 @@ Antes de buscar soluciones, esto es lo que podría hacer para lidiar con esta si
 
 Resulta que los sistemas fuertemente tipados en combinación con el análisis estático pueden ser de gran ayuda para comprender a qué nos enfrentamos exactamente. Lenguajes como Rust, por ejemplo, resuelven este problema limpiamente:
 
-```
+```php
 struct CustomerData {
     name: String,
     email: String,
@@ -120,7 +120,7 @@ En realidad, una estructura es exactamente lo que necesitamos, pero desafortunad
 
 Sin embargo... los objetos y las clases pueden ser suficientes.
 
-```
+```php
 class CustomerData
 {
     public string $name;
@@ -130,7 +130,7 @@ class CustomerData
 ```
 Es un poco más detallado, pero básicamente hace lo mismo. Este simple objeto podría usarse así.
 
-```
+```php
 function store(CustomerRequest $request, Customer $customer)
 {
     $validated = CustomerData::fromRequest($request);
@@ -160,7 +160,7 @@ Compartiré dos formas posibles de construir DTO y también explicaré cuál es 
 
 La primera es la más correcta: usar una fábrica dedicada.
 
-```
+```php
 class CustomerDataFactory
 {
     public function fromRequest(
@@ -184,7 +184,7 @@ Si bien es la solución correcta, ¿se dio cuenta de que usé una abreviatura en
 
 ¿Qué tiene de malo este enfoque? Bueno, por un lado, agrega lógica específica de la aplicación en el dominio. La clase DTO, que vive en el dominio, ahora debe conocer la clase `CustomerRequest`, que vive en la capa de aplicación.
 
-```
+```php
 use Spatie\DataTransferObject\DataTransferObject;
 
 class CustomerData extends DataTransferObject
@@ -216,7 +216,7 @@ Debido a que los parámetros con nombre no son compatibles, tampoco hay un anál
 
 Sin embargo, si PHP fuera compatible con algo como parámetros con nombre, lo cual será en PHP 8, diría que el patrón de fábrica es el camino a seguir:
 
-```
+```php
 public function fromRequest(
     CustomerRequest $request
 ): CustomerData {
@@ -231,4 +231,72 @@ public function fromRequest(
 ```
 Hasta que PHP admita esto, elegiría la solución pragmática sobre la teóricamente correcta. Sin embargo, depende de ti. Siéntase libre de elegir lo que mejor se adapte a su equipo.
 
-## An alternative to typed properties
+## Una alternativa a las propiedades tipadas
+
+Existe una alternativa al uso de propiedades con tipo: DocBlocks. Nuestro paquete DTO que mencioné anteriormente también los admite.
+
+```php
+use Spatie\DataTransferObject\DataTransferObject;
+
+class CustomerData extends DataTransferObject
+{
+    /** @var string */
+    public $name;
+
+    /** @var string */
+    public $email;
+    
+    /** @var \Carbon\Carbon */
+    public $birth_date;
+}
+```
+En algunos casos, los DocBlocks ofrecen ventajas: admiten una variedad de tipos y genéricos. Sin embargo, de forma predeterminada, DocBlocks no ofrece ninguna garantía de que los datos sean del tipo que dicen que son. Afortunadamente, PHP tiene su _reflection API_ y, con ella, es posible hacer mucho más.
+
+La solución proporcionada por este paquete se puede considerar como una extensión del sistema de tipos de PHP. Si bien hay mucho que uno puede hacer en el _userland_ y en el tiempo de ejecución, aún agrega valor. Si no puede usar PHP 7.4 y quiere un poco más de certeza de que sus tipos de DocBlock realmente se respetan, este paquete lo tiene cubierto.
+
+## Una nota sobre DTO en PHP 8
+
+PHP 8 admitirá argumentos con nombre, así como la promoción de propiedades del constructor. Esas dos características tendrán un impacto inmenso en la cantidad de código repetitivo que necesitará escribir.
+
+Así es como se vería una pequeña clase DTO en PHP 7.4.
+
+```php
+class CustomerData extends DataTransferObject
+{
+    public string $name;
+
+    public string $email;
+
+    public Carbon $birth_date;
+
+    public static function fromRequest(
+        CustomerRequest $request
+    ): self {
+        return new self([
+            'name' => $request->get('name'),
+            'email' => $request->get('email'),
+            'birth_date' => Carbon::make(
+                $request->get('birth_date')
+            ),
+        ]);
+    }
+}
+
+$data = CustomerData::fromRequest($customerRequest);
+```
+Y así es como se vería en PHP 8.
+```php
+class CustomerData
+{
+    public function __construct(
+        public string $name,
+        public string $email,
+        public Carbon $birth_date,
+    ) {}
+}
+
+$data = new CustomerData(...$customerRequest->validated());
+```
+Debido a que los datos se encuentran en el centro de casi todos los proyectos, son uno de los componentes básicos más importantes. Los objetos de transferencia de datos le ofrecen una forma de trabajar con datos de forma estructurada, segura y predecible.
+
+Notará a lo largo de este libro que los DTO se usan con mayor frecuencia. Por eso era tan importante echarles un vistazo en profundidad al principio. Del mismo modo, hay otro bloque de construcción crucial que necesita toda nuestra atención: las acciones. Ese es el tema del próximo capítulo.

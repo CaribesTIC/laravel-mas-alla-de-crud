@@ -87,7 +87,7 @@ Si prefiere permanecer más cerca de la estructura predeterminada de Laravel, pu
 
 Si aún desea separar los espacios de nombres raíz, puede hacerlo haciendo un ligero cambio en `composer.json`:
 
-```
+```json
 {
     // ...
     "autoload" : {
@@ -105,7 +105,7 @@ Desafortunadamente, hay una cosa más que debe hacer para que Laravel admita com
 
 Afortunadamente, podemos hacer fácilmente nuestra propia versión, así:
 
-```
+```php
 namespace App;
 
 class Application extends \Illuminate\Foundation\Application
@@ -115,7 +115,7 @@ class Application extends \Illuminate\Foundation\Application
 ```
 Y sobreescríbalo en `bootstrap/app.php`, así:
 
-```
+```php
 use App\Application;
 
 $app = (new Application(
