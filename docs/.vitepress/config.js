@@ -23,7 +23,8 @@ module.exports = {
         children: [
           { text: 'Laravel orientado al dominio', link: '/laravel-mas-alla-de-crud/laravel-orientado-al-dominio' },
           { text: 'Trabajar con datos', link: '/laravel-mas-alla-de-crud/trabajar-con-datos' },
-          { text: 'Acciones', link: '/laravel-mas-alla-de-crud/acciones' }
+          { text: 'Acciones', link: '/laravel-mas-alla-de-crud/acciones' },
+          { text: 'Modelos', link: '/laravel-mas-alla-de-crud/modelos' }
         ]
       }
     ]
