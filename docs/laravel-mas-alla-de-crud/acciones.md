@@ -109,4 +109,65 @@ Estas son cosas para las que puede escribir pruebas unitarias robustas, pero sim
 
 Si todas sus acciones se prueban correctamente, puede estar seguro de que la mayor parte de la funcionalidad que debe proporcionar la aplicación realmente funciona según lo previsto. Ahora solo es cuestión de usar estas acciones de manera que tengan sentido para el usuario final y escribir algunas pruebas de integración para esas piezas.
 
-## Composing actions
+## Acciones de composición
+
+Una característica importante de las acciones que ya mencioné antes brevemente, es cómo usan la inyección de dependencia. Dado que estamos usando el constructor para pasar datos del contenedor y el método `execute` para pasar datos relacionados con el contexto, somos libres de componer acciones a partir de acciones a partir de acciones a partir de...
+
+Entiendes la idea. Sin embargo, aclaremos que una cadena de dependencia profunda es algo que desea evitar (hace que el código sea complejo y altamente dependiente entre sí), sin embargo, hay varios casos en los que tener DI es muy beneficioso.
+
+Tomemos de nuevo el ejemplo de CreateInvoiceLineAction que tiene que calcular los precios del IVA. Ahora, dependiendo del contexto, una línea de factura puede tener un precio que incluya o no IVA. Calcular los precios del IVA es algo trivial, pero no queremos que `CreateInvoiceLineAction` se preocupe por los detalles.
+
+Así que imagine que tenemos una clase `VatCalculator` simple, que es algo que podría vivir en el espacio de nombres `\Support`, podría inyectarse así:
+
+```php
+class CreateInvoiceLineAction
+{
+    private VatCalculator $vatCalculator;
+
+    public function __construct(VatCalculator $vatCalculator)
+    {
+        $this->vatCalculator = $vatCalculator;
+    }
+
+    public function execute(
+        InvoiceLineData $invoiceLineData
+    ): InvoiceLine {
+        // ...
+    }
+}
+```
+Y lo usarías así:
+```php
+public function execute(
+    InvoiceLineData $invoiceLineData
+): InvoiceLine {
+    $item = $invoiceLineData->item;
+
+    if ($item->vatIncluded()) {
+        [$priceIncVat, $priceExclVat] =
+            $this->vatCalculator->vatIncluded(
+                $item->getPrice(),
+                $item->getVatPercentage()
+            );
+    } else {
+        [$priceIncVat, $priceExclVat] =
+            $this->vatCalculator->vatExcluded(
+                $item->getPrice(),
+                $item->getVatPercentage()
+            );
+    }
+    
+    $amount = $invoiceLineData->item_amount;
+
+    return new InvoiceLine([
+         'item_price' => $item->getPrice(),
+         'total_price' => $amount * $priceIncVat,
+         'total_price_excluding_vat' => $amount * $priceExclVat,
+    ]);
+}
+```
+`CreateInvoiceLineAction`, a su vez, se inyectaría en `CreateInvoiceAction`. Y este nuevamente tiene otras dependencias: `CreatePdfAction` y `SendMailAction`, por ejemplo.
+
+Puede ver cómo la composición puede ayudarlo a mantener pequeñas las acciones individuales y, al mismo tiempo, permitir que la funcionalidad comercial compleja se codifique de una manera clara y fácil de mantener.
+
+## Alternatives to actions
