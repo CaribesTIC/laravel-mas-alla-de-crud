@@ -170,4 +170,18 @@ public function execute(
 
 Puede ver cómo la composición puede ayudarlo a mantener pequeñas las acciones individuales y, al mismo tiempo, permitir que la funcionalidad comercial compleja se codifique de una manera clara y fácil de mantener.
 
-## Alternatives to actions
+## Alternativas a las acciones
+
+Hay dos paradigmas que necesito mencionar en este punto que no necesitarían un concepto como acciones.
+
+El primero será conocido por las personas que están familiarizadas con los comandos y controladores de DDD: Las acciones son una versión simplificada de ellas. Donde los comandos y controladores hacen una distinción entre lo que debe suceder y cómo debe suceder, las acciones combinan estas dos responsabilidades en una sola. Sin embargo, es cierto que el bus de comandos ofrece más flexibilidad que las acciones. Por otro lado, también requiere que escribas más código.
+
+Para el alcance de nuestros proyectos, dividir las acciones en comandos y controladores era ir demasiado lejos. Casi nunca necesitaríamos la flexibilidad adicional, pero llevaría mucho más tiempo escribir el código.
+
+La segunda alternativa que vale la pena mencionar son los sistemas controlados por eventos. Si alguna vez trabajó en un sistema basado en eventos, podría pensar que las acciones están demasiado directamente relacionadas con los lugares donde realmente se usan. Una vez más, se aplica el mismo argumento: los sistemas basados en eventos ofrecen más flexibilidad, pero para nuestros proyectos hubiera sido exagerado usarlos. Además, los sistemas controlados por eventos agregan una capa de indireccionalidad que hace que el código sea más complejo de razonar. Si bien esta indireccionalidad ofrece beneficios, no superarían el costo de mantenimiento para nosotros.
+
+Espero que quede claro que no estoy sugiriendo que lo tenemos todo resuelto y tenemos la solución perfecta para todos los proyectos de Laravel. Nosotros no. Cuando continúe leyendo este libro, es importante que vigile las necesidades específicas de su proyecto. Si bien es posible que pueda usar algunos conceptos propuestos aquí, es posible que también necesite otras soluciones para resolver ciertos aspectos.
+
+Para nosotros, las acciones son la elección correcta porque ofrecen la cantidad adecuada de flexibilidad, reutilización y reducen significativamente la carga cognitiva. Encapsulan la esencia de la aplicación. De hecho, pueden considerarse, junto con los DTO y los modelos, como el verdadero núcleo del proyecto.
+
+Eso nos lleva al siguiente capítulo, la última pieza del núcleo: los modelos.
