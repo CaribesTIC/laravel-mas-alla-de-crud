@@ -70,4 +70,172 @@ Incluso si no está de acuerdo conmigo sobre las ventajas que trae la responsabi
 
 Para resumir, piense en los modelos y su propósito como si solo le proporcionaran datos a usted y deje que otra persona se ocupe de asegurarse de que los datos se calculen correctamente.
 
-## Scaling down models
+## Reducción de modelos
+
+Si nuestro objetivo es mantener las clases de modelos razonablemente pequeñas — lo suficientemente pequeñas como para poder entenderlas simplemente abriendo su archivo — necesitamos mover algunas cosas más. Idealmente, solo queremos mantener los datos leídos de la base de datos, accesos simples para cosas que no podemos calcular de antemano, conversiones y relaciones.
+
+Otras responsabilidades deben trasladarse a otras clases. Un ejemplo son los ámbitos de consulta. Podríamos moverlos fácilmente a clases de creación de consultas dedicadas.
+
+Lo crea o no, las clases de creación de consultas son en realidad la forma normal de usar Eloquent; los ámbitos son simplemente azúcar sintáctico encima de ellos. Este es el aspecto que podría tener una clase de generador de consultas.
+
+```php
+namespace Domain\Invoices\QueryBuilders;
+
+use Domain\Invoices\States\Paid;
+use Illuminate\Database\Eloquent\Builder;
+
+class InvoiceQueryBuilder extends Builder
+{
+    public function wherePaid(): self
+    {
+        return $this->whereState('status', Paid::class);
+    }
+}
+```
+A continuación, anulamos el método `newEloquentBuilder` en nuestro modelo y devolvemos nuestra clase personalizada. Laravel lo usará a partir de ahora.
+
+```php
+namespace Domain\Invoices\Models;
+
+use Domain\Invoices\QueryBuilders\InvoiceQueryBuilder;
+
+class Invoice extends Model
+{
+    public function newEloquentBuilder($query): InvoiceQueryBuilder
+    {
+        return new InvoiceQueryBuilder($query);
+    }
+}
+```
+Esto es lo que quise decir con adoptar el marco: no es necesario introducir nuevos patrones como repositorios per se; puede construir sobre lo que proporciona Laravel. Pensándolo un poco, logramos el equilibrio perfecto entre el uso de los productos proporcionados por el marco y la prevención de que nuestro código crezca demasiado en lugares específicos.
+
+Usando esta mentalidad, también podemos proporcionar clases de colección personalizadas para las relaciones. Laravel tiene un excelente soporte de colección, aunque a menudo terminas con largas cadenas de funciones de colección, ya sea en el modelo o en la capa de la aplicación. Nuevamente, esto no es ideal y, afortunadamente, Laravel nos brinda los enlaces necesarios para agrupar la lógica de la colección en una clase dedicada.
+
+Aquí hay un ejemplo de una clase de colección personalizada y tenga en cuenta que es completamente posible combinar varios métodos en otros nuevos, evitando largas cadenas de funciones en otros lugares.
+
+```php
+namespace Domain\Invoices\Collections;
+
+use Domain\Invoices\Models\InvoiceLines;
+use Illuminate\Database\Eloquent\Collection;
+
+class InvoiceLineCollection extends Collection
+{
+    public function creditLines(): self
+    {
+        return $this->filter(fn (InvoiceLine $invoiceLine) =>
+            $invoiceLine->isCreditLine()
+        );
+    }
+}
+```
+Así es como vincula una clase de cobro a un modelo — `InvoiceLine` — en este caso:
+
+```php
+namespace Domain\Invoices\Models;
+
+use Domain\Invoices\Collection\InvoiceLineCollection;
+
+class InvoiceLine extends Model
+{
+    public function newCollection(
+        array $models = []
+    ): InvoiceLineCollection {
+        return new InvoiceLineCollection($models);
+    }
+
+    public function isCreditLine(): bool
+    {
+        return $this->price < 0.0;
+    }
+}
+```
+Cada modelo que tenga una relación `HasMany` con `InvoiceLine`, ahora usará nuestra clase de colección en su lugar.
+
+```php
+$invoice
+    ->invoiceLines
+    ->creditLines()
+    ->map(function (InvoiceLine $invoiceLine) {
+        // ...
+    });
+```
+Intente mantener sus modelos limpios y orientados a datos, en lugar de que proporcionen lógica de negocios. Hay mejores lugares para manejarlo.
+
+## Modelos basados en eventos
+
+En el capítulo 3, ya mencioné los sistemas controlados por eventos y cómo ofrecen más flexibilidad, a costa de la complejidad.
+
+Es posible que prefiera un enfoque basado en eventos, por lo que creo que hay una nota importante que hacer sobre los eventos relacionados con el modelo. Laravel emitirá eventos de modelos genéricos de forma predeterminada y espera que uses un observador de modelos o configures oyentes en el propio modelo.
+
+También hay otro enfoque, uno que es más flexible y robusto. Puede reasignar eventos de modelos genéricos a clases de eventos específicas, según el modelo, y usar suscriptores de eventos dedicados para ellos.
+
+En un modelo, se vería así:
+
+```php
+class Invoice
+{
+    protected $dispatchesEvents = [
+        'saving' => InvoiceSavingEvent::class,
+        'deleting' => InvoiceDeletingEvent::class,
+    ];
+}
+```
+A su vez, una clase de evento tan específica sería similar a:
+
+```php
+class InvoiceSavingEvent
+{
+    public Invoice $invoice;
+
+    public function __construct(Invoice $invoice)
+    {
+        $this->invoice = $invoice;
+    }
+}
+```
+
+Y finalmente, el suscriptor podría implementarse como:
+
+```php
+use Illuminate\Events\Dispatcher;
+
+class InvoiceSubscriber
+{
+    private CalculateTotalPriceAction $calculateTotalPriceAction;
+    
+    public function __construct(
+        CalculateTotalPriceAction $calculateTotalPriceAction
+    ) {/* ... */}
+
+    public function saving(InvoiceSavingEvent $event): void
+    {
+        $invoice = $event->invoice;
+
+        $invoice->total_price =
+        ($this->calculateTotalPriceAction)($invoice);
+    }
+    
+    public function subscribe(Dispatcher $dispatcher): void
+    {
+        $dispatcher->listen(
+            InvoiceSavingEvent::class,
+            self::class . '@saving'
+        );
+    }
+}
+```
+
+El cual quedaría registrado en el `EventServiceProvider`, así:
+
+```php
+class EventServiceProvider extends ServiceProvider
+{
+    protected $subscribe = [
+        InvoiceSubscriber::class,
+    ];
+}
+```
+Este enfoque también le brinda la flexibilidad de conectar sus propios eventos de modelo personalizados y manejarlos de la misma manera que se manejan los eventos elocuentes. Y una vez más, las clases de suscripción permiten que nuestros modelos se mantengan pequeños y fáciles de mantener.
+
+## Empty bags of nothingness
