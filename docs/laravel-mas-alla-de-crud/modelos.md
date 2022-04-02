@@ -238,4 +238,12 @@ class EventServiceProvider extends ServiceProvider
 ```
 Este enfoque también le brinda la flexibilidad de conectar sus propios eventos de modelo personalizados y manejarlos de la misma manera que se manejan los eventos elocuentes. Y una vez más, las clases de suscripción permiten que nuestros modelos se mantengan pequeños y fáciles de mantener.
 
-## Empty bags of nothingness
+## Bolsas vacías de nada
+
+Martin Fowler escribió una vez sobre cómo debemos evitar que los objetos se conviertan en nada más que bolsas vacías de datos, algo que él llama un anti-patrón. Quizás estés pensando que estamos haciendo lo mismo con nuestras clases modelo.
+
+Mi respuesta a esas preocupaciones es doble. En primer lugar: no pienso en los modelos como bolsas vacías con datos simples y antiguos. Mediante el uso de accesores y conversiones, proporcionan una rica capa entre los datos sin formato de la base de datos y los datos que un desarrollador desea utilizar. En este capítulo, argumenté mover varias otras responsabilidades a clases separadas, eso es cierto, pero creo que los modelos en su estado "recortado" todavía ofrecen mucho más valor que simples bolsas de datos, gracias a toda la funcionalidad que ofrece Laravel.
+
+En segundo lugar, creo que vale la pena mencionar la visión de Alan Kay sobre este tema (él es quien inventó el término POO). Una vez dijo que lamentaba llamar al paradigma _"orientado a objetos"_ y no _"orientado a procesos"_. Alan argumenta que en realidad es partidario de dividir el proceso y los datos.
+
+Depende de usted si está de acuerdo con ese punto de vista o no. Admito haber sido influenciado por algunas de las ideas de Alan, y es posible que lo note a lo largo de este libro. Como dije antes: no piense en este libro como el santo grial del diseño de software. Mi objetivo es desafiar la forma actual de escribir código, haciéndote pensar si existen formas más óptimas de resolver algunos de tus problemas.
