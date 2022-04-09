@@ -1,0 +1,3 @@
+# Enumeraciones
+
+Enums or states?

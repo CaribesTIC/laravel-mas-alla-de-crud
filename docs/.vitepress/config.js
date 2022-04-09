@@ -25,7 +25,8 @@ module.exports = {
           { text: 'Trabajar con datos', link: '/laravel-mas-alla-de-crud/trabajar-con-datos' },
           { text: 'Acciones', link: '/laravel-mas-alla-de-crud/acciones' },
           { text: 'Modelos', link: '/laravel-mas-alla-de-crud/modelos' },
-          { text: 'Estados', link: '/laravel-mas-alla-de-crud/estados' }
+          { text: 'Estados', link: '/laravel-mas-alla-de-crud/estados' },
+          { text: 'Enumeraciones', link: '/laravel-mas-alla-de-crud/enumeraciones' }
         ]
       }
     ]

@@ -59,9 +59,7 @@ Verá, es matemáticamente demostrable que si se compila un programa fuertemente
 
 Como nota al margen: ¡esto no significa que un lenguaje fuertemente tipado no pueda tener errores! Eres perfectamente capaz de escribir una implementación con errores. Pero cuando un programa fuertemente tipado se compila con éxito, está seguro de que cierto conjunto de errores y errores relacionados con el tipo no pueden ocurrir en ese programa.
 
----
-Los sistemas de tipo fuerte permiten a los desarrolladores tener mucha más información sobre el programa al escribir el código, en lugar de tener que ejecutarlo.
----
+>Los sistemas de tipo fuerte permiten a los desarrolladores tener mucha más información sobre el programa al escribir el código, en lugar de tener que ejecutarlo.
 
 Hay un concepto más que debemos analizar: sistemas de tipos estáticos y dinámicos, y aquí es donde las cosas comienzan a ponerse interesantes.
 
