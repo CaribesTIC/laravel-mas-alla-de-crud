@@ -27,7 +27,8 @@ module.exports = {
           { text: 'Modelos', link: '/laravel-mas-alla-de-crud/modelos' },
           { text: 'Estados', link: '/laravel-mas-alla-de-crud/estados' },
           { text: 'Enumeraciones', link: '/laravel-mas-alla-de-crud/enumeraciones' },
-          { text: 'Administrar dominios', link: '/laravel-mas-alla-de-crud/administrar-dominios' },          
+          { text: 'Administrar dominios', link: '/laravel-mas-alla-de-crud/administrar-dominios' },
+          { text: 'Prueba de dominios', link: '/laravel-mas-alla-de-crud/prueba-de-dominios' },        
         ]
       }
     ]
